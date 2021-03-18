@@ -1,3 +1,4 @@
+import time
 import random
 import numpy as np
 
@@ -121,7 +122,7 @@ class KMeans(object):
                 cluster_centers[i, :] = center
         elif self._init == 'kmeans++':
             for i in range(self._n_cluster):
-                cluster_centers[i, :] = self._farthest_select(data, cluster_centers[0:i])
+                cluster_centers[i, :] = self._kmeans_plusplus(data, cluster_centers[0:i])
         else:
             raise AttributeError('The initialization method is not available.')
         return cluster_centers
@@ -143,16 +144,8 @@ class KMeans(object):
         labels_ = [0] * n_samples
         interia_ = 0
         for i, pts in enumerate(data):
-            min_dist = np.inf
-            belong_id = -1
-            for k in range(self._n_cluster):
-                dist = self._get_dist(pts, cluster_centers[k])
-                if dist < min_dist:
-                    min_dist = dist
-                    belong_id = k
-            assert belong_id != -1
-            labels_[i] = belong_id
-            interia_ += min_dist
+            labels_[i] = np.argmin([self._get_dist(pts, cluster_center) for cluster_center in cluster_centers])
+            interia_ += self._get_dist(pts, cluster_centers[labels_[i]])
         return labels_, interia_
 
     def _compute_centers(self, data, labels):      
@@ -178,7 +171,7 @@ class KMeans(object):
                 cluster_centers[i] /= cluster_counts[i]
             else:
                 if self._init == 'kmeans++':
-                    cluster_centers[i, :] = self._farthest_select(data, cluster_centers[0:i])
+                    cluster_centers[i, :] = self._kmeans_plusplus(data, cluster_centers[0:i])
                 else:
                     cluster_centers[i, :] = self._random_select(data)
         return cluster_centers
@@ -194,21 +187,10 @@ class KMeans(object):
         return data[id]
     
     @staticmethod
-    def _farthest_select(data, centers):
+    def _kmeans_plusplus(data, centers):
         if centers.shape[0] == 0:
             return KMeans._random_select(data)
-        else:
-            max_dist = -np.inf
-            max_pts = np.array([])
-            for pts in data:
-                min_dist = np.inf
-                for center in centers:
-                    dist = KMeans._get_dist(center, pts)
-                    if dist < min_dist:
-                        min_dist = dist
-                if min_dist > max_dist:
-                    max_dist = min_dist
-                    max_pts = pts
-            assert max_pts != np.array([])
-            return max_pts
+        else: 
+            max_pts = np.argmax([np.min([KMeans._get_dist(center, pts) for center in centers]) for pts in data])
+            return data[max_pts]
 
