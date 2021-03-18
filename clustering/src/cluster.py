@@ -53,7 +53,7 @@ class KMeans(object):
         self.interia_ = np.inf
         for epoch in range(self._n_init):
             random.seed()
-            cluster_centers_ = self._init_center(data)=
+            cluster_centers_ = self._init_center(data)
             labels_, interia_ = self._assign_label(data, cluster_centers_)
             last_interia = interia_
             for iter_ in range(self._max_iter):
