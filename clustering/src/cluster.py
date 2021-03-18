@@ -53,8 +53,11 @@ class KMeans(object):
         self.interia_ = np.inf
         for epoch in range(self._n_init):
             random.seed()
+            start = time.time()
             cluster_centers_ = self._init_center(data)
+            print(time.time() - start)
             labels_, interia_ = self._assign_label(data, cluster_centers_)
+            print(time.time() - start)
             last_interia = interia_
             for iter_ in range(self._max_iter):
                 n_iter_ = iter_ + 1
@@ -91,7 +94,7 @@ class KMeans(object):
         res_labels: the new labels after sorting
         """
         _, n_features = data.shape
-        radius = np.zeros(self._n_cluster)
+        radius = np.empty(self._n_cluster, dtype=np.float64)
         for i, pts in enumerate(data):
             k = labels[i]
             radius[k] = max(radius[k].astype(np.float64), self._get_dist(cluster_centers[k], pts))
@@ -113,7 +116,7 @@ class KMeans(object):
         cluster_centers: initialized centers of the clusters.
         """
         _, n_features = data.shape
-        cluster_centers = np.zeros((self._n_cluster, n_features))
+        cluster_centers = np.zeros((self._n_cluster, n_features), dtype = np.float64)
         if self._init == 'random':
             for i in range(self._n_cluster):
                 center = self._random_select(data)
@@ -145,7 +148,7 @@ class KMeans(object):
         interia_ = 0
         for i, pts in enumerate(data):
             labels_[i] = np.argmin([self._get_dist(pts, cluster_center) for cluster_center in cluster_centers])
-            interia_ += self._get_dist(pts, cluster_centers[labels_[i]])
+            interia_ += self._get_dist(pts, cluster_centers[labels_[i]], squared=True)
         return labels_, interia_
 
     def _compute_centers(self, data, labels):      
@@ -161,8 +164,8 @@ class KMeans(object):
         cluster_centers: new centers of clusters according to the labels.
         """
         _, n_features = data.shape
-        cluster_centers = np.zeros((self._n_cluster, n_features))
-        cluster_counts = np.zeros(self._n_cluster)
+        cluster_centers = np.zeros((self._n_cluster, n_features), dtype=np.float64)
+        cluster_counts = np.zeros(self._n_cluster, dtype=np.int)
         for i, pts in enumerate(data):
             cluster_centers[labels[i]] += pts
             cluster_counts[labels[i]] += 1
@@ -177,13 +180,16 @@ class KMeans(object):
         return cluster_centers
 
     @staticmethod
-    def _get_dist(x, y):
-        return np.sum((x - y) ** 2)
+    def _get_dist(x, y, squared = False):
+        if squared:
+            return np.sqrt((x - y).dot(x - y))
+        else:
+            return (x - y).dot(x - y)
     
     @staticmethod
     def _random_select(data):
         n_samples, _ = data.shape
-        id = random.randint(0, n_samples)
+        id = random.randint(0, n_samples - 1)
         return data[id]
     
     @staticmethod
