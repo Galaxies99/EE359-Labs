@@ -53,11 +53,8 @@ class KMeans(object):
         self.interia_ = np.inf
         for epoch in range(self._n_init):
             random.seed()
-            start = time.time()
-            cluster_centers_ = self._init_center(data)
-            print(time.time() - start)
+            cluster_centers_ = self._init_center(data)=
             labels_, interia_ = self._assign_label(data, cluster_centers_)
-            print(time.time() - start)
             last_interia = interia_
             for iter_ in range(self._max_iter):
                 n_iter_ = iter_ + 1
@@ -94,7 +91,7 @@ class KMeans(object):
         res_labels: the new labels after sorting
         """
         _, n_features = data.shape
-        radius = np.empty(self._n_cluster, dtype=np.float64)
+        radius = np.zeros(self._n_cluster, dtype=np.float64)
         for i, pts in enumerate(data):
             k = labels[i]
             radius[k] = max(radius[k].astype(np.float64), self._get_dist(cluster_centers[k], pts))
