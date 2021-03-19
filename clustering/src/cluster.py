@@ -103,8 +103,7 @@ class KMeans(object):
         """
         radius = np.zeros(self._n_cluster, dtype=np.float64)
         for i in range(self._n_cluster):
-            cluster_members = data[labels == i]
-            radius[i] = self._get_dist_batch(cluster_centers[i], cluster_members).max(axis=0)
+            radius[i] = self._get_dist_batch(cluster_centers[i], data[labels == i]).max(axis=0)
         index = np.argsort(radius, axis=0)
         res_cluster_centers = cluster_centers[index]
         res_labels, _ = self._assign_label(data, res_cluster_centers)
