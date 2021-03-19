@@ -6,7 +6,7 @@ df = pd.read_csv('data/training.csv', index_col=['PID'])
 data = np.array(df)
 n_samples, _ = data.shape
 
-kmeans = KMeans(display_log=True)
+kmeans = KMeans(display_log=True, n_init=1)
 kmeans.fit(data)
 
 out_df = pd.DataFrame(kmeans.labels_, columns=['category'])

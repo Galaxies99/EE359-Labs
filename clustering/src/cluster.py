@@ -52,14 +52,23 @@ class KMeans(object):
         """
         self.interia_ = np.inf
         for epoch in range(self._n_init):
+            tic = time.time()
             random.seed()
             cluster_centers_ = self._init_center(data)
+            if self._display_log:
+                print('Finish initialization, time cost until now:', time.time() - tic)
             labels_, interia_ = self._assign_label(data, cluster_centers_)
+            if self._display_log:
+                print('Finish assigning labels, time cost until now:', time.time() - tic)
             last_interia = interia_
             for iter_ in range(self._max_iter):
                 n_iter_ = iter_ + 1
                 cluster_centers_ = self._compute_centers(data, labels_)
+                if self._display_log:
+                    print('Finish computing centers, time cost until now:', time.time() - tic)
                 labels_, interia_ = self._assign_label(data, cluster_centers_)
+                if self._display_log:
+                    print('Finish assigning labels, time cost until now:', time.time() - tic)
                 if abs(interia_ - last_interia) < self._tol:
                     break
                 last_interia = interia_
@@ -74,6 +83,8 @@ class KMeans(object):
                 self.interia_ = interia_
         if self._sorted_cluster:
             self.cluster_centers_, self.labels_ = self._sort_cluster(data, self.cluster_centers_, self.labels_)
+        if self._display_log:
+            print('Finish sorting, time cost until now:', time.time() - tic)
         return self
     
     def _sort_cluster(self, data, cluster_centers, labels):
@@ -90,13 +101,12 @@ class KMeans(object):
         res_cluster_centers: the new cluster centers after sorting
         res_labels: the new labels after sorting
         """
-        _, n_features = data.shape
         radius = np.zeros(self._n_cluster, dtype=np.float64)
-        for i, pts in enumerate(data):
-            k = labels[i]
-            radius[k] = max(radius[k].astype(np.float64), self._get_dist(cluster_centers[k], pts))
-        zipped_cluster_centers = np.concatenate([cluster_centers, radius.reshape((self._n_cluster, 1))], axis=1)
-        res_cluster_centers = np.array(sorted(zipped_cluster_centers, key=lambda c: c[-1]))[:, 0:n_features]
+        for i in range(self._n_cluster):
+            cluster_members = data[labels == i]
+            radius[i] = self._get_dist_batch(cluster_centers[i], cluster_members).max(axis=0)
+        index = np.argsort(radius, axis=0)
+        res_cluster_centers = cluster_centers[index]
         res_labels, _ = self._assign_label(data, res_cluster_centers)
         return res_cluster_centers, res_labels
         
@@ -141,11 +151,12 @@ class KMeans(object):
         interia_: the global interia
         """
         n_samples, _ = data.shape
-        labels_ = [0] * n_samples
+        labels_ = np.zeros(n_samples, dtype=int)
         interia_ = 0
         for i, pts in enumerate(data):
-            labels_[i] = np.argmin([self._get_dist(pts, cluster_center) for cluster_center in cluster_centers])
-            interia_ += self._get_dist(pts, cluster_centers[labels_[i]], squared=True)
+            dist = self._get_dist_batch(pts, cluster_centers)
+            labels_[i] = np.argmin(dist, axis=0)
+            interia_ += np.sqrt(dist[labels_[i]])
         return labels_, interia_
 
     def _compute_centers(self, data, labels):      
@@ -162,13 +173,10 @@ class KMeans(object):
         """
         _, n_features = data.shape
         cluster_centers = np.zeros((self._n_cluster, n_features), dtype=np.float64)
-        cluster_counts = np.zeros(self._n_cluster, dtype=np.int)
-        for i, pts in enumerate(data):
-            cluster_centers[labels[i]] += pts
-            cluster_counts[labels[i]] += 1
         for i in range(self._n_cluster):
-            if cluster_counts[i] != 0:
-                cluster_centers[i] /= cluster_counts[i]
+            cluster_members = data[labels == i]
+            if len(cluster_members) != 0:
+                cluster_centers[i] = cluster_members.mean(axis=0)
             else:
                 if self._init == 'kmeans++':
                     cluster_centers[i, :] = self._kmeans_plusplus(data, cluster_centers[0:i])
@@ -177,11 +185,18 @@ class KMeans(object):
         return cluster_centers
 
     @staticmethod
-    def _get_dist(x, y, squared = False):
+    def _get_dist(x, y, squared=False):
         if squared:
             return np.sqrt((x - y).dot(x - y))
         else:
             return (x - y).dot(x - y)
+    
+    @staticmethod
+    def _get_dist_batch(x, y, squared=False):
+        if squared:
+            return np.sqrt(((x - y) ** 2).sum(axis=-1))
+        else:
+            return ((x - y) ** 2).sum(axis=-1)
     
     @staticmethod
     def _random_select(data):
@@ -194,6 +209,6 @@ class KMeans(object):
         if centers.shape[0] == 0:
             return KMeans._random_select(data)
         else: 
-            max_pts = np.argmax([np.min([KMeans._get_dist(center, pts) for center in centers]) for pts in data])
+            max_pts = np.argmax([np.min(KMeans._get_dist_batch(pts, centers), axis=0) for pts in data])
             return data[max_pts]
 
