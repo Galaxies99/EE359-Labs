@@ -149,13 +149,11 @@ class KMeans(object):
         labels_: the label to each instance
         interia_: the global interia
         """
-        n_samples, _ = data.shape
-        labels_ = np.zeros(n_samples, dtype=int)
+        n_samples, n_features = data.shape
         interia_ = 0
-        for i, pts in enumerate(data):
-            dist = self._get_dist_batch(pts, cluster_centers)
-            labels_[i] = np.argmin(dist, axis=0)
-            interia_ += np.sqrt(dist[labels_[i]])
+        dist = KMeans._get_dist_batch(data.reshape(1, n_samples, n_features), cluster_centers.reshape(self._n_cluster, 1, n_features))
+        labels_ = np.argmin(dist, axis=0)
+        interia_ = np.sum(np.sqrt(np.min(dist, axis=0)))
         return labels_, interia_
 
     def _compute_centers(self, data, labels):      
@@ -208,6 +206,8 @@ class KMeans(object):
         if centers.shape[0] == 0:
             return KMeans._random_select(data)
         else: 
-            max_pts = np.argmax([np.min(KMeans._get_dist_batch(pts, centers), axis=0) for pts in data])
+            n_samples, n_features = data.shape
+            n_cluster, _ = centers.shape
+            max_pts = np.argmax(np.min(KMeans._get_dist_batch(data.reshape(1, n_samples, n_features), centers.reshape(n_cluster, 1, n_features)), axis=0))
             return data[max_pts]
 
