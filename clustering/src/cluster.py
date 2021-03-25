@@ -105,8 +105,9 @@ class KMeans(object):
         for i in range(self._n_cluster):
             radius[i] = self._get_dist_batch(cluster_centers[i], data[labels == i]).max(axis=0)
         index = np.argsort(radius, axis=0)
+        index_inv = np.argsort(index, axis=0)
         res_cluster_centers = cluster_centers[index]
-        res_labels, _ = self._assign_label(data, res_cluster_centers)
+        res_labels = index_inv[labels]
         return res_cluster_centers, res_labels
         
 
