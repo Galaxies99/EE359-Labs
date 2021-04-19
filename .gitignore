@@ -5,6 +5,7 @@
 */data
 */__pycache__/
 */*/__pycache__/
+.history/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
