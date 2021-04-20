@@ -49,10 +49,8 @@ class Louvain(object):
         partition_list = [partition.copy()]
 
         while True:
-            print('Modularity: ', last_Q)
-            print('Modularity check: ', partition.modularity(optimized = False))
+            print('Modularity in Epoch:', last_Q)
             partition, graph = self._restructure(partition, graph)
-            print('Modularity check again: ', partition.modularity(optimized = False))
             partition, Q = self._partition(partition, graph, last_Q)
             partition_list.append(partition.copy())
 
@@ -82,7 +80,7 @@ class Louvain(object):
         
         no_gain = False
         while not no_gain:
-            print(Q)
+            print('Modularity in Iteration: ', Q)
             no_gain = True
             # Randomize accessing nodes in G
             for x in random.sample(graph.iter_nodes().keys(), len(graph.iter_nodes().keys())):

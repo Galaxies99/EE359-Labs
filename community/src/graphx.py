@@ -283,9 +283,6 @@ class GraphPartition(object):
         '''
         return self.partition
     
-    def debug(self):
-        print(self.cluster_size)
-    
     def modularity(self, optimized = True):
         '''
         Compute the modularity of the current partition in the graph.

@@ -7,11 +7,9 @@ from utils import find_most_occurence
 
 df = pd.read_csv('data/edges.csv')
 data = np.array(df)
-print('Read data end ...')
 
 graph = WeightedUndirectedGraph()
 graph.add_edges_from_list(data)
-print('Add edges end ...')
 
 louvain = Louvain()
 partition = louvain.fit(graph)
@@ -19,7 +17,6 @@ partition = louvain.fit(graph)
 dict = partition.get_partition()
 
 pre_clusters = len(set(dict.values()))
-print(set(dict.values()))
 gt = []
 gt_mapping = []
 for i in range(pre_clusters):
