@@ -85,7 +85,7 @@ class Louvain(object):
             # Randomize accessing nodes in G
             for x in random.sample(graph.iter_nodes().keys(), len(graph.iter_nodes().keys())):
                 x_community = partition.get_community(x)
-                max_dQ, com = self.minimum_dQ, 0
+                max_dQ, max_deg, com = self.minimum_dQ, 0, 0
                 appeared = []
                 for y in graph.iter_edges(x).keys():
                     y_community = partition.get_community(y)
@@ -95,8 +95,13 @@ class Louvain(object):
                         continue
                     dQ = partition.modularity_gain(x, y_community)
                     appeared.append(y_community)
+                    y_deg = partition.get_degree(y_community)
                     if dQ > max_dQ:
                         max_dQ = dQ
+                        max_deg = y_deg
+                        com = y_community
+                    elif dQ == max_dQ and y_deg > max_deg:
+                        max_deg = y_deg
                         com = y_community
                         
                 if max_dQ > self.minimum_dQ:
@@ -122,7 +127,7 @@ class Louvain(object):
         new_graph: a WeightedUndirectedGraph object, the restructured graph.
         '''
         new_graph = WeightedUndirectedGraph()
-        for x in graph.iter_nodes():
+        for x in graph.iter_nodes().keys():
             x_community = partition.get_community(x)
             for y, w in graph.iter_edges(x).items():
                 y_community = partition.get_community(y)
@@ -149,7 +154,7 @@ class Louvain(object):
         '''
         partition = partition_list[0].copy()
         for index in range(1, len(partition_list)):
-            for x in graph.iter_nodes():
+            for x in graph.iter_nodes().keys():
                 cur_cluster = partition.get_community(x)
                 partition.assign_community(x, partition_list[index].get_community(cur_cluster))
         return partition
@@ -188,15 +193,14 @@ class Leiden(object):
         '''
         graph = G.copy()
         partition = GraphPartition(graph, self.resolution)
-
         partition_list = []
 
         while True:
             partition, Q = self._fast_partition(partition, graph)
-            if partition.is_singleton() is True:
-                break
-            print('iter {} ---> Modularity in Epoch: {}'.format(iter, Q))
+            print('---> Modularity in Epoch: {}'.format(Q))
             refined_partition, partition, graph = self._restructure(partition, graph)
+            if refined_partition.is_singleton() is True:
+                break
             partition_list.append(refined_partition.copy())
         
         partition_list.append(partition)
@@ -230,7 +234,7 @@ class Leiden(object):
             x = node_queue.get()
             in_queue[x] = False
             x_community = partition.get_community(x)
-            max_dQ, com = self.minimum_dQ, 0
+            max_dQ, max_deg, com = self.minimum_dQ, 0, 0
             appeared = []
             for y in graph.iter_edges(x).keys():
                 y_community = partition.get_community(y)
@@ -240,14 +244,19 @@ class Leiden(object):
                     continue
                 dQ = partition.modularity_gain(x, y_community)
                 appeared.append(y_community)
+                y_deg = partition.get_degree(y_community)
                 if dQ > max_dQ:
                     max_dQ = dQ
+                    max_deg = y_deg
                     com = y_community
-                        
+                elif dQ == max_dQ and y_deg > max_deg:
+                    max_deg = y_deg
+                    com = y_community
             if max_dQ > self.minimum_dQ:
                 partition.assign_community(x, com)
                 Q = Q + max_dQ
                 for y in graph.iter_edges(x).keys():
+
                     if in_queue.get(y, False) == False:
                         node_queue.put(y)
                         in_queue[y] = True
@@ -271,9 +280,12 @@ class Leiden(object):
         new_partition: a GraphPartition object, the new partition corresponding to the new graph;
         new_graph: a WeightedUndirectedGraph object, the restructured graph.
         '''
+        partition = partition.renumber().copy()
         refined_partition = self._get_refined_partition(partition, graph)
         new_graph = WeightedUndirectedGraph()
-        for x in graph.iter_nodes():
+        for community in refined_partition.iter_communities():
+            new_graph.add_node(community, refined_partition.get_community_nodes_weight(community))
+        for x in graph.iter_nodes().keys():
             x_community = refined_partition.get_community(x)
             for y, w in graph.iter_edges(x).items():
                 y_community = refined_partition.get_community(y)
@@ -281,7 +293,11 @@ class Leiden(object):
                     new_graph.add_edge(x_community, y_community, w)
                 else:
                     new_graph.add_edge(x_community, y_community, w / 2)
-        new_partition = GraphPartition(new_graph, self.resolution)
+        new_partition = GraphPartition(new_graph)
+        for x in new_graph.iter_nodes().keys():
+            x_node = refined_partition.get_community_members(x)[0]
+            x_com = partition.get_community(x_node)
+            new_partition.assign_community(x, x_com)
         return refined_partition, new_partition, new_graph
 
 
@@ -301,12 +317,12 @@ class Leiden(object):
         refined_partition = GraphPartition(graph)
         for community in tqdm(partition.iter_communities()):
             community_subset = partition.get_community_members(community)
-            refined_partition = self._merge_node_subset(refined_partition, graph, community_subset)
-        refined_partition.renumber()
+            refined_partition = self._merge_node_subset(refined_partition, graph, community_subset, partition.get_community_nodes_weight(community))
+        refined_partition = refined_partition.renumber().copy()
         return refined_partition
 
 
-    def _merge_node_subset(self, partition, graph, community_subset):
+    def _merge_node_subset(self, partition, graph, community_subset, subset_nodes_weight):
         '''
         Refine partition on the given community.
 
@@ -314,7 +330,8 @@ class Leiden(object):
         ----------
         partition: a GraphPartition object, the initial partition;
         graph: a WeightedUndirectedGraph object, the original graph;
-        community_subset: list, the community members.
+        community_subset: list, the community members;
+        subset_nodes_weight: int, the weight of all nodes in the community subset.
 
         Returns
         -------
@@ -328,7 +345,7 @@ class Leiden(object):
             for y, w in graph.iter_edges(x).items():
                 if y in community_subset and y != x:
                     weights += w
-            if weights >= self.resolution * 1 * (len(community_subset) - 1):
+            if weights >= self.resolution * graph.node_weight(x) * (subset_nodes_weight - graph.node_weight(x)):
                 well_connected.append(x)
         
         # Visit node in well connected set.
@@ -352,8 +369,8 @@ class Leiden(object):
                         for _y, w in graph.iter_edges(_x).items():
                             if _y in community_subset and refined_partition.get_community(_y) != com:
                                 weights += w
-                    com_size = refined_partition.get_community_size(com)
-                    if weights >= self.resolution * com_size * (len(community_subset) - com_size):
+                    com_size = refined_partition.get_community_nodes_weight(com)
+                    if weights >= self.resolution * com_size * (subset_nodes_weight - com_size):
                         dQ = refined_partition.modularity_gain(x, com)
                         if dQ >= 0:
                             well_connected_communities.append(com)
@@ -389,7 +406,7 @@ class Leiden(object):
         '''
         partition = partition_list[0].copy()
         for index in range(1, len(partition_list)):
-            for x in graph.iter_nodes():
+            for x in graph.iter_nodes().keys():
                 cur_cluster = partition.get_community(x)
                 partition.assign_community(x, partition_list[index].get_community(cur_cluster))
         return partition

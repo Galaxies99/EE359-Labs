@@ -17,21 +17,24 @@ class WeightedUndirectedGraph(object):
         '''
         self._graph = {}
         self._degree = {}
+        self._node_weight = {}
         self._edge_degree = {}
         self._size = 0
         self._edge_size = 0
     
-    def add_node(self, node):
+    def add_node(self, node, node_weight = 1):
         '''
         Add a node in the graph
 
         Parameters
         ----------
         node: the given index of the node
+        node_weight: int, optional, default: 1, the weight of the node
         '''
         if node in self._graph.keys():
             return
         self._graph[node] = {}
+        self._node_weight[node] = node_weight
         self._degree[node] = 0
         self._edge_degree[node] = 0
     
@@ -141,6 +144,20 @@ class WeightedUndirectedGraph(object):
         '''
         return self._edge_degree.get(node, 0)
     
+    def node_weight(self, node):
+        '''
+        Get the weight of the given node in the graph.
+
+        Parameters
+        ----------
+        node: the target node.
+
+        Returns
+        -------
+        The node weight.
+        '''
+        return self._node_weight[node]
+
     def size(self):
         '''
         Get the weighted size of the graph, i.e., the sum of edge weights.
@@ -197,6 +214,7 @@ class GraphPartition(object):
     GraphPartition.m2: int, the total degree of the graph;
     GraphPartition.partition: dict, the partition of the graph;
     GraphPartition.nodes: list of list, the nodes contained in each community;
+    GraphPartition.nodes_weight: list, the summation of node weights in each community;
     GraphPartition.degree: list, the degree of nodes in each community, used for modularity calculation;
     GraphPartition.inside_weight: list, the inside edge weight in each community, used for modularity calculation;
     GraphPartition.cluster_size: list, the size of each cluster partitioned in the graph;
@@ -218,6 +236,7 @@ class GraphPartition(object):
         self.m2 = 2 * self.graph.size()
         self.partition = {}
         self.nodes = []
+        self.nodes_weight = []
         self.degree = []
         self.inside_weight = []
         self.cluster_size = []
@@ -226,6 +245,7 @@ class GraphPartition(object):
             for x in graph.iter_nodes():
                 self.partition[x] = self.num_clusters
                 self.nodes.append([x])
+                self.nodes_weight.append(self.graph.node_weight(x))
                 self.degree.append(graph.degree(x))
                 self.inside_weight.append(self.graph.get_selfcycle(x) * 2)
                 self.cluster_size.append(1)
@@ -254,6 +274,8 @@ class GraphPartition(object):
         x: int, a given node in the graph;
         com: int, the assigned community to the given node.
         '''
+        if self.partition[x] == com:
+            return
         # Remove from old community, maintain self.nodes, self.degree, self.inside_weight, self.cluster_size
         old_com = self.partition[x]
         self.nodes[old_com].remove(x)
@@ -262,6 +284,7 @@ class GraphPartition(object):
             if self.partition[y] == old_com:
                 self.inside_weight[old_com] -= w + w
         self.cluster_size[old_com] -= 1
+        self.nodes_weight[old_com] -= self.graph.node_weight(x)
 
         # Add into new community, maintain self.nodes, self.degree, self.inside_weight, self.cluster_size
         self.partition[x] = com
@@ -271,6 +294,7 @@ class GraphPartition(object):
             if self.partition[y] == com:
                 self.inside_weight[com] += w + w
         self.cluster_size[com] += 1
+        self.nodes_weight[com] += self.graph.node_weight(x)
     
     def iter_communities(self):
         '''
@@ -324,6 +348,20 @@ class GraphPartition(object):
         '''
         return self.nodes[com] if com < self.num_clusters else []
     
+    def get_community_nodes_weight(self, com):
+        '''
+        Get the weights of all nodes of the community.
+
+        Parameters
+        ----------
+        com: int, the community.
+
+        Returns
+        -------
+        The weight of all nodes of the community.
+        '''
+        return self.nodes_weight[com] if com < self.num_clusters else 0
+
     def is_singleton(self):
         '''
         Check whether the partition is a singleton partition.
@@ -336,6 +374,20 @@ class GraphPartition(object):
             if self.cluster_size[i] != 1:
                 return False
         return True
+    
+    def get_degree(self, com):
+        '''
+        Get the degree of the community.
+
+        Parameters
+        ----------
+        com: int, the community.
+
+        Returns
+        -------
+        The degree of the community.
+        '''
+        return self.degree[com] if com < self.num_clusters else 0
 
     def renumber(self):
         '''
@@ -351,6 +403,7 @@ class GraphPartition(object):
             new_com = res.num_clusters
             renumber_mapping[com] = new_com
             res.nodes.append(self.nodes[com].copy())
+            res.nodes_weight.append(self.nodes_weight[com])
             res.degree.append(self.degree[com])
             res.inside_weight.append(self.inside_weight[com])
             res.cluster_size.append(self.cluster_size[com])
