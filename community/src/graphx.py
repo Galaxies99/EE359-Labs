@@ -193,20 +193,28 @@ class GraphPartition(object):
     Members
     -------
     GraphPartition.graph: networkx.Graph object, the given graph;
+    GraphPartition.resolution: float, optional, default: 1.0, the resolution of modularity;
+    GraphPartition.m2: int, the total degree of the graph;
     GraphPartition.partition: dict, the partition of the graph;
+    GraphPartition.nodes: list of list, the nodes contained in each community;
+    GraphPartition.degree: list, the degree of nodes in each community, used for modularity calculation;
+    GraphPartition.inside_weight: list, the inside edge weight in each community, used for modularity calculation;
     GraphPartition.cluster_size: list, the size of each cluster partitioned in the graph;
     GraphPartition.num_clusters: int, the number of clusters in the partition.
     '''
-    def __init__(self, graph):
+    def __init__(self, graph, resolution = 1.0, initialize_singleton = True):
         '''
         Initialize the partition as an individual partition.
 
         Parameters
         ----------
-        graph: a WeightedUndirectedGraph object, the graph we focus on.
+        graph: a WeightedUndirectedGraph object, the graph we focus on;
+        resolution: float, optional, default: 1.0, the resolution of modularity;
+        initialize_singleton: bool, optional, defualt: True, whether to initialize the object as a singleton partition of the graph.
         '''
         super(GraphPartition, self).__init__()
         self.graph = graph.copy()
+        self.resolution = resolution
         self.m2 = 2 * self.graph.size()
         self.partition = {}
         self.nodes = []
@@ -214,13 +222,14 @@ class GraphPartition(object):
         self.inside_weight = []
         self.cluster_size = []
         self.num_clusters = 0
-        for x in graph.iter_nodes():
-            self.partition[x] = self.num_clusters
-            self.nodes.append([x])
-            self.degree.append(graph.degree(x))
-            self.inside_weight.append(self.graph.get_selfcycle(x) * 2)
-            self.cluster_size.append(1)
-            self.num_clusters += 1
+        if initialize_singleton:
+            for x in graph.iter_nodes():
+                self.partition[x] = self.num_clusters
+                self.nodes.append([x])
+                self.degree.append(graph.degree(x))
+                self.inside_weight.append(self.graph.get_selfcycle(x) * 2)
+                self.cluster_size.append(1)
+                self.num_clusters += 1
     
     def get_community(self, x):
         '''
@@ -271,18 +280,86 @@ class GraphPartition(object):
         -------
         An iterative list of the communities in the partition.
         '''
-        return range(self.num_clusters)
+        res = []
+        for i in range(self.num_clusters):
+            if self.cluster_size[i] > 0:
+                res.append(i)
+        return res
 
     def get_partition(self):
         '''
-        Get the partition dict of the graph
+        Get the partition dict of the graph.
 
         Returns
         -------
         A partition dict.
         '''
         return self.partition
+
+    def get_community_size(self, com):
+        '''
+        Get the size of the community.
+
+        Parameters
+        ----------
+        com: int, the community.
+
+        Returns
+        -------
+        The size of the community, 0 if the community not exists.
+        '''
+        return self.cluster_size[com] if com < self.num_clusters else 0
     
+    def get_community_members(self, com):
+        '''
+        Get the members of the community.
+
+        Parameters
+        ----------
+        com: int, the community.
+
+        Returns
+        -------
+        The members of the community.
+        '''
+        return self.nodes[com] if com < self.num_clusters else []
+    
+    def is_singleton(self):
+        '''
+        Check whether the partition is a singleton partition.
+
+        Returns
+        -------
+        True if the partition is a singleton partition, False otherwise.
+        '''
+        for i in range(self.num_clusters):
+            if self.cluster_size[i] != 1:
+                return False
+        return True
+
+    def renumber(self):
+        '''
+        Renumber the partitions.
+
+        Returns
+        -------
+        The renumbered partition. 
+        '''
+        res = GraphPartition(self.graph, self.resolution, initialize_singleton=False)
+        renumber_mapping = {}
+        for com in self.iter_communities():
+            new_com = res.num_clusters
+            renumber_mapping[com] = new_com
+            res.nodes.append(self.nodes[com].copy())
+            res.degree.append(self.degree[com])
+            res.inside_weight.append(self.inside_weight[com])
+            res.cluster_size.append(self.cluster_size[com])
+            res.num_clusters += 1
+        for x in self.graph.iter_nodes().keys():
+            res.partition[x] = renumber_mapping[self.partition[x]]
+        return res
+        
+
     def modularity(self, optimized = True):
         '''
         Compute the modularity of the current partition in the graph.
@@ -298,11 +375,10 @@ class GraphPartition(object):
         if optimized:
             Q = 0
             for community in self.iter_communities():
-                if self.cluster_size[community] != 0:
-                    Q += self.inside_weight[community] / self.m2 - (self.degree[community] / self.m2) ** 2
+                Q += self.inside_weight[community] / self.m2 - self.resolution * (self.degree[community] / self.m2) ** 2
             return Q
         else:
-            return modularity(self.graph, self)
+            return modularity(self.graph, self, self.resolution)
 
     def modularity_gain(self, x, com):
         '''
@@ -320,6 +396,7 @@ class GraphPartition(object):
         old_com = self.partition[x]
         dQ = (self.degree[com] / self.m2) ** 2 + (self.degree[old_com] / self.m2) ** 2
         dQ -= ((self.degree[com] + self.graph.degree(x)) / self.m2) ** 2 + ((self.degree[old_com] - self.graph.degree(x)) / self.m2) ** 2
+        dQ = dQ * self.resolution
         for y, w in self.graph.iter_edges(x).items():
             if x == y:
                 continue
@@ -340,14 +417,15 @@ class GraphPartition(object):
         return copy.deepcopy(self)
 
 
-def modularity(graph, partition):
+def modularity(graph, partition, resolution = 1.0):
     '''
     Compute the modularity of the partition in the graph
 
     Parameters
     ----------
     graph: a WeightedUndirectedGraph object, the graph which will be decomposed;
-    partition: a GraphPartition object, the partition of the given graph.
+    partition: a GraphPartition object, the partition of the given graph;
+    resolution: float, optional, default: 1.0, the resolution of the modularity.
 
     Returns
     -------
@@ -373,6 +451,6 @@ def modularity(graph, partition):
     
     Q = 0  # The modularity value
     for community in partition.iter_communities():
-        Q = Q + inside_weight.get(community, 0) / (2 * m) - (degree.get(community, 0) / (2 * m)) ** 2
+        Q = Q + inside_weight.get(community, 0) / (2 * m) - resolution * (degree.get(community, 0) / (2 * m)) ** 2
     
     return Q

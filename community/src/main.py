@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from graphx import WeightedUndirectedGraph
-from community import Louvain
+from community import Louvain, Leiden
 from utils import find_most_occurence
 
 
@@ -29,6 +29,7 @@ for item in gt_data:
     gt[dict[node]].append(gt_label)
 
 for i in range(pre_clusters):
+    print(i, gt[i])
     gt_mapping.append(find_most_occurence(gt[i], range(5)))
 
 id = 0
