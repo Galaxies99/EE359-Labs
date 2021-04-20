@@ -1,5 +1,6 @@
 import math
 import random
+import time
 from tqdm import tqdm
 from queue import Queue
 from graphx import WeightedUndirectedGraph, GraphPartition
@@ -337,19 +338,24 @@ class Leiden(object):
         -------
         refined_partition: a GraphPartition object, the refined partition on the given community.
         '''
-        refined_partition = partition.copy()
+        refined_partition = partition
         # Find out the set of well-connected nodes, i.e., R in paper.
         well_connected = []
         for x in community_subset:
             weights = 0
-            for y, w in graph.iter_edges(x).items():
-                if y in community_subset and y != x:
-                    weights += w
+            if len(list(graph.iter_edges(x).keys())) < len(community_subset):
+                for y, w in graph.iter_edges(x).items():
+                    if y in community_subset and y != x:
+                        weights += w
+            else:
+                for y in community_subset:
+                    if graph.iter_edges(x).get(y, -1) != -1 and y != x:
+                        weights += graph.iter_edges(x).get(y, -1)
             if weights >= self.resolution * graph.node_weight(x) * (subset_nodes_weight - graph.node_weight(x)):
                 well_connected.append(x)
-        
+
         # Visit node in well connected set.
-        for x in tqdm(random.sample(well_connected, len(well_connected))):
+        for x in random.sample(well_connected, len(well_connected)):
             x_community = refined_partition.get_community(x)
             if refined_partition.get_community_size(x_community) == 1:
                 candidate_communities = []
@@ -387,7 +393,6 @@ class Leiden(object):
                 # Assign new community
                 if assigned_community != -1:
                     refined_partition.assign_community(x, assigned_community)
-
         return refined_partition
 
     
