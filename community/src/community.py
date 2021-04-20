@@ -315,7 +315,7 @@ class Leiden(object):
         refined_partition: a GraphPartition object, the refined partition.
         '''
         refined_partition = GraphPartition(graph)
-        for community in tqdm(partition.iter_communities()):
+        for community in partition.iter_communities():
             community_subset = partition.get_community_members(community)
             refined_partition = self._merge_node_subset(refined_partition, graph, community_subset, partition.get_community_nodes_weight(community))
         refined_partition = refined_partition.renumber().copy()
@@ -349,7 +349,7 @@ class Leiden(object):
                 well_connected.append(x)
         
         # Visit node in well connected set.
-        for x in random.sample(well_connected, len(well_connected)):
+        for x in tqdm(random.sample(well_connected, len(well_connected))):
             x_community = refined_partition.get_community(x)
             if refined_partition.get_community_size(x_community) == 1:
                 candidate_communities = []
