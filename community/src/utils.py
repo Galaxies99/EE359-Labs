@@ -49,13 +49,14 @@ def generate_labels(partition, gt):
     for i in range(n):
         num.append(len(cluster_candidates[i]))
         if num[i] == 1:
-            criterion += partition.get_community_size(i) / num[i]
+            criterion += partition.get_community_size(i)
     criterion = criterion / partition.graph.node_size()
     print('total: ', criterion)
+
+    # Based on the modularity
+    '''
     num = np.array(num)
     id = np.argsort(num)
-
-    '''
     for index in tqdm(range(n)):
         com = id[index]
         partition_res = None
@@ -72,6 +73,8 @@ def generate_labels(partition, gt):
                 max_dQ = dQ
         partition = partition_res.copy()
     '''
+
+    # Like random
     partition.insert_community(5)
     for i in range(n):
         com = cluster_candidates[i][0] + n
