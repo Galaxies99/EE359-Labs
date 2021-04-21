@@ -7,9 +7,13 @@ class WeightedUndirectedGraph(object):
     
     Members
     -------
-    WeightedUndirectedGraph.graph: dict of dict, the graph;
-    WeightedUndirectedGraph.deg: the precomputed weighted degree of each node in the graph
-    WeightedUndirectedGraph.edge_deg: the precomputed degree of each node in the graph
+    WeightedUndirectedGraph._graph: dict of dict, the graph;
+    WeightedUndirectedGraph._degree: the precomputed weighted degree of each node in the graph;
+    WeightedUndirectedGraph._node_weight: the weight of the each node in the graph;
+    WeightedUndirectedGraph._node_size: the node size of the graph;
+    WeightedUndirectedGraph._edge_degree: the precomputed degree of each node in the graph;
+    WeightedUndirectedGraph._size: the weighted edge size of the graph;
+    WeightedUndirectedGraph._edge_size: the edge size of the graph.
     '''
     def __init__(self):
         '''
@@ -18,6 +22,7 @@ class WeightedUndirectedGraph(object):
         self._graph = {}
         self._degree = {}
         self._node_weight = {}
+        self._node_size = 0
         self._edge_degree = {}
         self._size = 0
         self._edge_size = 0
@@ -37,6 +42,7 @@ class WeightedUndirectedGraph(object):
         self._node_weight[node] = node_weight
         self._degree[node] = 0
         self._edge_degree[node] = 0
+        self._node_size += 1
     
     def add_edge(self, source, target, weight = 1):        
         '''
@@ -168,6 +174,16 @@ class WeightedUndirectedGraph(object):
         '''
         return self._size
     
+    def node_size(self):
+        '''
+        Get the node size of the graph
+
+        Returns
+        -------
+        The node size of the graph.
+        '''
+        return self._node_size
+
     def edge_size(self):
         '''
         Get the unweighted size of the graph, i.e., the number of the edges.
@@ -264,7 +280,7 @@ class GraphPartition(object):
         the communities that node x lies in; if no communities is found, then return -1.
         '''
         return self.partition.get(x, -1)
-    
+
     def assign_community(self, x, com):
         '''
         Assign the community of the node.
@@ -276,6 +292,8 @@ class GraphPartition(object):
         '''
         if self.partition[x] == com:
             return
+        if com >= self.num_clusters:
+            raise ValueError('community number is not valid!')
         # Remove from old community, maintain self.nodes, self.degree, self.inside_weight, self.cluster_size
         old_com = self.partition[x]
         self.nodes[old_com].remove(x)
@@ -296,6 +314,24 @@ class GraphPartition(object):
         self.cluster_size[com] += 1
         self.nodes_weight[com] += self.graph.node_weight(x)
     
+    def insert_community(self, num = 1):
+        '''
+        Insert new empty communities.
+
+        Parameters
+        ----------
+        num: int, optional, default: 1, the number of communities you want to insert.
+        '''
+        if type(num) is not int or num < 0:
+            raise ValueError('num should be non-negative integers.')
+        for _ in range(num):
+            self.nodes.append([])
+            self.nodes_weight.append(0)
+            self.degree.append(0)
+            self.inside_weight.append(0)
+            self.cluster_size.append(0)
+            self.num_clusters += 1
+
     def iter_communities(self):
         '''
         Get an iterative list of the communities in the partition, which is used to enumerate communities.

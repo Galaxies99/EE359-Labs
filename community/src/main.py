@@ -2,10 +2,13 @@ import pandas as pd
 import numpy as np
 from graphx import WeightedUndirectedGraph
 from community import Louvain, Leiden
-from utils import find_most_occurence
+from utils import generate_labels
 
 
-df = pd.read_csv('data/edges.csv')
+EDGE_FILE = 'data/edges.csv'
+GT_FILE = 'data/ground_truth.csv'
+
+df = pd.read_csv(EDGE_FILE)
 data = np.array(df)
 
 graph = WeightedUndirectedGraph()
@@ -14,30 +17,12 @@ graph.add_edges_from_list(data)
 louvain = Louvain()
 partition = louvain.fit(graph)
 
-dict = partition.get_partition()
+gt_df = pd.read_csv(GT_FILE)
+gt_data = np.array(gt_df)
+labels, criterion = generate_labels(partition, gt_data)
 
-pre_clusters = len(set(dict.values()))
-gt = []
-gt_mapping = []
-for i in range(pre_clusters):
-    gt.append([])
-
-df = pd.read_csv('data/ground_truth.csv')
-gt_data = np.array(df)
-for item in gt_data:
-    node, gt_label = item[0], item[1]
-    gt[dict[node]].append(gt_label)
-
-for i in range(pre_clusters):
-    print(i, gt[i])
-    gt_mapping.append(find_most_occurence(gt[i], range(5)))
-
-id = 0
-labels = []
-while id in dict.keys():
-    labels.append(gt_mapping[dict[id]])
-    id += 1
+LABEL_FILE = 'data/label_{}.csv'.format(criterion)
 
 out_df = pd.DataFrame(labels, columns=['category'])
 out_df.index.name = 'id'
-out_df.to_csv('data/labels.csv')
+out_df.to_csv(LABEL_FILE)
