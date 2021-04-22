@@ -46,7 +46,7 @@ class Louvain(object):
 
         Returns
         -------
-        A partition of the graph G.
+        A partition of the graph G, along with the modularity.
         '''
         graph = G.copy()
         partition = GraphPartition(graph, self.resolution)
@@ -59,7 +59,7 @@ class Louvain(object):
             print('Modularity in Epoch:', Q)
             partition, graph = self._restructure(partition, graph)
     
-        return self._combine_partition_list(partition_list, G)
+        return self._combine_partition_list(partition_list, G), Q
 
     
     def _partition(self, partition, graph, Q = None):
@@ -190,7 +190,7 @@ class Leiden(object):
 
         Returns
         -------
-        A partition of the graph G.
+        A partition of the graph G, along with the modularity.
         '''
         graph = G.copy()
         partition = GraphPartition(graph, self.resolution)
@@ -205,7 +205,7 @@ class Leiden(object):
             partition_list.append(refined_partition.copy())
         
         partition_list.append(partition)
-        return self._combine_partition_list(partition_list, G)
+        return self._combine_partition_list(partition_list, G), Q
 
     
     def _fast_partition(self, partition, graph, Q = None):

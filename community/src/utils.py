@@ -32,8 +32,56 @@ def find_most_occurence(num_list, candidates):
     return res
 
 
-def generate_labels(partition, gt):
+def extend_gt(graph, gt):
+    '''
+    Extend the ground truth nodes to their neighbors.
+
+    Parameters
+    ----------
+    gt: the ground-truth labels.
+
+    Returns
+    -------
+    gt_res: the reconstructed ground-truth labels.
+    '''
+    gt_res = []
+    record = {}
+    for item in gt:
+        node, label = item[0], item[1]
+        for x in graph.iter_edges(node).keys():
+            if x not in gt[:, 0]:
+                record[x] = record.get(x, []) + [label]
+        gt_res.append([node, label])
+    for node, gt_rec in record.items():
+        candidates = list(set(gt_rec))
+        if len(candidates) == 1 and len(gt_rec) == 2:
+            gt_res.append([node, candidates[0]])
+    gt_res = np.array(gt_res)
+    print(gt.shape, gt_res.shape)
+    return gt_res
+
+
+def generate_labels(partition, gt, extended_gt = True, assign_method = 'simple'):
+    '''
+    Generate labels according to the ground-truth file and the partition.
+
+    Parameters
+    ----------
+    partition: a GraphPartition object, the partition;
+    gt: a np.array object, the ground-truth labels;
+    extended_gt: bool, optional, default: True, extend the ground-truth labels;
+    assign_method: str, {'simple', 'modularity'}, optional, default: 'simple': the label assigning method.
+        - 'simple': the simple assigning method;
+        - 'modularity': assign the labels of the community based on the minimum loss of modularity.
+
+    Returns
+    -------
+    The generated labels, along with the criterion, which is defined as:
+       criterion = [the nodes whose labels can be determined with almost 100% confidence] / [the number of nodes]
+    '''
     partition = partition.renumber().copy()
+    if extended_gt:
+        gt = extend_gt(partition.graph, gt)
     n = partition.num_clusters
     gt_record = []
     cluster_candidates = []
@@ -53,34 +101,31 @@ def generate_labels(partition, gt):
     criterion = criterion / partition.graph.node_size()
     print('total: ', criterion)
 
-    # Based on the modularity
-    '''
-    num = np.array(num)
-    id = np.argsort(num)
-    for index in tqdm(range(n)):
-        com = id[index]
-        partition_res = None
-        max_dQ = -1e18
-        for new_com in cluster_candidates[com]:
-            partition_t = partition.copy()
-            partition_t.insert_community(5)
-            dQ = 0
-            for x in partition.get_community_members(com):
-                dQ += partition_t.modularity_gain(x, new_com + n)
-                partition_t.assign_community(x, new_com + n)
-            if dQ > max_dQ:
-                partition_res = partition_t.copy()
-                max_dQ = dQ
-        partition = partition_res.copy()
-    '''
-
-    # Like random
-    partition.insert_community(5)
-    for i in range(n):
-        com = cluster_candidates[i][0] + n
-        com_members = partition.get_community_members(i).copy()
-        for x in com_members:
-            partition.assign_community(x, com)
+    if assign_method == 'modularity':
+        num = np.array(num)
+        id = np.argsort(num)
+        for index in tqdm(range(n)):
+            com = id[index]
+            partition_res = None
+            max_dQ = -1e18
+            for new_com in cluster_candidates[com]:
+                partition_t = partition.copy()
+                partition_t.insert_community(5)
+                dQ = 0
+                for x in partition.get_community_members(com):
+                    dQ += partition_t.modularity_gain(x, new_com + n)
+                    partition_t.assign_community(x, new_com + n)
+                if dQ > max_dQ:
+                    partition_res = partition_t.copy()
+                    max_dQ = dQ
+            partition = partition_res.copy()
+    elif assign_method == 'simple':
+        partition.insert_community(5)
+        for i in range(n):
+            com = cluster_candidates[i][0] + n
+            com_members = partition.get_community_members(i).copy()
+            for x in com_members:
+                partition.assign_community(x, com)
     
     partition = partition.renumber()
     label_gen = partition.get_partition()
