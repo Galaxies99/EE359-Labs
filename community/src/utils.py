@@ -57,7 +57,7 @@ def extend_gt(graph, gt):
         if len(candidates) == 1 and len(gt_rec) == 2:
             gt_res.append([node, candidates[0]])
     gt_res = np.array(gt_res)
-    print(gt.shape, gt_res.shape)
+    # print(gt.shape, gt_res.shape)
     return gt_res
 
 
