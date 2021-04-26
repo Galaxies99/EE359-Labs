@@ -19,9 +19,9 @@ partition, Q = louvain.fit(graph)
 
 gt_df = pd.read_csv(GT_FILE)
 gt_data = np.array(gt_df)
-labels, criterion = generate_labels(partition, gt_data)
+labels, criterion = generate_labels(partition, gt_data, extended_gt = False)
 
-LABEL_FILE = 'data/labels_{}_{}.csv'.format(criterion, Q)
+LABEL_FILE = 'data/labels.csv'
 
 out_df = pd.DataFrame(labels, columns=['category'])
 out_df.index.name = 'id'
