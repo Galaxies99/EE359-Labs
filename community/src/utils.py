@@ -84,12 +84,14 @@ def generate_labels(partition, gt, extended_gt = True, assign_method = 'simple')
         gt = extend_gt(partition.graph, gt)
     n = partition.num_clusters
     gt_record = []
+    gt_dict = {}
     cluster_candidates = []
     for _ in range(n):
         gt_record.append([])
     for item in gt:
         node, label = item[0], item[1]
         gt_record[partition.get_community(node)].append(label)
+        gt_dict[node] = label
     for i in range(n):
         cluster_candidates.append(find_most_occurence(gt_record[i], range(5)))
     num = []
@@ -132,6 +134,9 @@ def generate_labels(partition, gt, extended_gt = True, assign_method = 'simple')
     labels = []
     id = 0
     while id in label_gen.keys():
-        labels.append(partition.get_community(id))
+        if id not in gt_dict.keys():
+            labels.append(partition.get_community(id))
+        else:
+            labels.append(gt_dict[id])
         id += 1
     return labels, criterion
