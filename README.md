@@ -28,12 +28,21 @@ References:
 1. Traag, Vincent A., Ludo Waltman, and Nees Jan Van Eck. "From Louvain to Leiden: guaranteeing well-connected communities." Scientific reports 9.1 (2019): 1-12.
 2. Blondel, Vincent D., et al. "Fast unfolding of communities in large networks." Journal of statistical mechanics: theory and experiment 2008.10 (2008): P10008.
 
+## Lab 3: Link Prediction
+
+We mainly implement node2vec algorithm in the link prediction lab.
+
+Referecnces:
+
+1. Li, Aaron Q., et al. "Reducing the sampling complexity of topic models.", Proceedings of the 20th ACM SIGKDD international conference on Knowledge discovery and data mining. 2014.
+2. Grover, Aditya, and Jure Leskovec. "node2vec: Scalable feature learning for networks." Proceedings of the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining. 2016.
+
 ## Notes
 
 All work of the repository is done by Galaxies, any form of plagiarization is strictly forbidden. But, feel free to use the implementations if you find them useful.
 
-```
-@misc{KMeans_EE359_2021,
+```bibtex
+@misc{fang2021kmeans_ee359,
   author =       {Hongjie Fang},
   title =        {KMeans Algorithm Implementation in EE359 Labs of SJTU},
   howpublished = {\url{https://github.com/Galaxies99/EE359-Labs/tree/main/clustering}},
@@ -41,8 +50,8 @@ All work of the repository is done by Galaxies, any form of plagiarization is st
 }
 ```
 
-```
-@misc{Louvain_EE359_2021,
+```bibtex
+@misc{fang2021louvain_ee359,
   author =       {Hongjie Fang},
   title =        {Louvain Algorithm Implementation in EE359 Labs of SJTU},
   howpublished = {\url{https://github.com/Galaxies99/EE359-Labs/tree/main/community}},
@@ -50,11 +59,20 @@ All work of the repository is done by Galaxies, any form of plagiarization is st
 }
 ```
 
-```
-@misc{Leiden_EE359_2021,
+```bibtex
+@misc{fang2021leiden_ee359,
   author =       {Hongjie Fang},
   title =        {Leiden Algorithm Implementation in EE359 Labs of SJTU},
   howpublished = {\url{https://github.com/Galaxies99/EE359-Labs/tree/main/community}},
+  year =         {2021}
+}
+```
+
+```bibtex
+@misc{fang2021node2vec_ee359,
+  author =       {Hongjie Fang},
+  title =        {Node2Vec Algorithm Implementation in EE359 Labs of SJTU},
+  howpublished = {\url{https://github.com/Galaxies99/EE359-Labs/tree/main/linkprediction}},
   year =         {2021}
 }
 ```

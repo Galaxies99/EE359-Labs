@@ -47,7 +47,8 @@ class n2vGraph(object):
         self.node_sampling = {}
         for x in self.nodes:
             prob = [self.graph.get_weight(x, y) for y in self.graph.neighbors(x)]
-            self.node_sampling[x] = alias_init(prob, normalized = False)
+            if len(prob) > 0:
+                self.node_sampling[x] = alias_init(prob, normalized = False)
         
         self.edge_sampling = {}
         for x in self.nodes:
@@ -62,7 +63,8 @@ class n2vGraph(object):
                         prob.append(weight)
                     else:
                         prob.append(weight / self.q)
-                self.edge_sampling[(x, y)] = alias_init(prob)
+                if len(prob) > 0:
+                    self.edge_sampling[(x, y)] = alias_init(prob)
         
         prob = [self.graph.get_degree(x) for x in self.nodes]
         self.negative_sampling_params = alias_init(prob, normalized = False)
@@ -86,16 +88,15 @@ class n2vGraph(object):
         A walk list.
         '''
         walk = [node]
-        stop = False
         
         if length != 1:
             neighbors = self.graph.neighbors(node)
             if len(neighbors) > 0:
                 walk.append(neighbors[alias_sampling(self.node_sampling[node])])
             else:
-                stop = True
+                walk.append(node)
 
-        while not stop and len(walk) < length:
+        while len(walk) < length:
             y = walk[-1]
             neighbors = self.graph.neighbors(y)
             if len(neighbors) > 0:
@@ -103,7 +104,7 @@ class n2vGraph(object):
                 z = neighbors[alias_sampling(self.edge_sampling[(x, y)])]
                 walk.append(z)
             else:
-                stop = True
+                walk.append(y)
         
         id_walk = []
         for item in walk:

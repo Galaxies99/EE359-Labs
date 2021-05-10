@@ -57,7 +57,7 @@ class node2vec(nn.Module):
         -------
         The sampling random walks.
         '''
-        return torch.IntTensor(self.graph.walk(num_walks = self.num_walks, length = self.walk_length, nodes = nodes)).to(device)
+        return torch.LongTensor(self.graph.walk(num_walks = self.num_walks, length = self.walk_length, nodes = nodes)).to(device)
 
     def loss(self, nodes, walks, device):
         '''
@@ -66,7 +66,7 @@ class node2vec(nn.Module):
         Parameters
         ----------
         nodes: list, the given set of starting nodes;
-        walks: torch.IntTensor, the sampling random walks;
+        walks: torch.LongTensor, the sampling random walks;
         device: the device of the network.
 
         Returns
@@ -83,9 +83,30 @@ class node2vec(nn.Module):
         samples = []
         for _ in all_node:
             samples.append(self.graph.negative_sampling(self.k))
-        sample_node = torch.IntTensor(samples).to(device)
+        sample_node = torch.LongTensor(samples).to(device)
         emb_node = self.emb(all_node)
         emb_sample = self.emb(sample_node)
         loss = loss + torch.log(torch.sigmoid(emb_node * emb_sample).sum(dim = -1).view(-1)).sum()
         loss = loss / node_num / self.num_walks / (self.walk_length - 1)
         return loss
+    
+    def link_prediction(self, source, target):
+        '''
+        Perform link prediction based on node2vec embeddings.
+
+        Parameters
+        ----------
+        source, target: the predicting edges.
+
+        Returns
+        -------
+        The prediction of the given edges.
+        '''
+        for i, src in enumerate(source):
+            source[i] = self.graph.id[src.item()]
+        for i, tgt in enumerate(target):
+            target[i] = self.graph.id[tgt.item()]
+        emb_source = self.emb(source)
+        emb_target = self.emb(target)
+        pred = torch.sigmoid((emb_source * emb_target).sum(dim = -1))
+        return pred
