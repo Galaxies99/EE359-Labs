@@ -1,6 +1,10 @@
-walk_num: 40
+graph_file: 'data/course3_edge.csv'
+test_file: 'data/course3_test.csv'
+num_walks: 40
 walk_length: 20
 embedding_dim: 256
+epoch_num: 60
+batch_size: 128
 p: 1
 q: 1
 k: 10
