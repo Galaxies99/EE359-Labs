@@ -1,14 +1,15 @@
 graph_file: 'data/course3_edge.csv'
 test_file: 'data/course3_test.csv'
 checkpoint_dir: 'checkpoint'
+walking_pool_size: 100
 num_walks: 40
 walk_length: 20
 embedding_dim: 256
-epoch_num: 180
+epoch_num: 200
 batch_size: 128
-learning_rate: 0.01
-milestones: [30, 60, 90, 120, 150]
-gamma: 0.1
-p: 1
-q: 1
+learning_rate: 0.05
+milestones: [1, 80, 130, 170]
+gamma: 0.2
+p: 0.5
+q: 2
 k: 10

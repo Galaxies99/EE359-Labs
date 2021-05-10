@@ -22,7 +22,7 @@ class node2vec(nn.Module):
     Grover, Aditya, and Jure Leskovec. "node2vec: Scalable feature learning for networks." 
       Proceedings of the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining. 2016.
     '''
-    def __init__(self, graph: Graph, num_walks: int, walk_length: int, embedding_dim: int, p: float, q: float, k: int):
+    def __init__(self, graph: Graph, num_walks: int, walking_pool_size: int, walk_length: int, embedding_dim: int, p: float, q: float, k: int):
         '''
         Initialize the node2vec framework.
 
@@ -30,13 +30,14 @@ class node2vec(nn.Module):
         ----------
         graph: Graph object, the original graph;
         num_walks, int, the number of walks;
+        walking_pool_size: int, the size of walking pool of each node; non-positive value means no walking pool;
         walk_length: int, the walking length;
         embedding_dim: int, the embedding dim of each node;
         p, q: float, the parameters of probability in node2vec walking process;
         k: int, the times of negative sampling.
         '''
         super(node2vec, self).__init__()
-        self.graph = n2vGraph(graph, p, q)
+        self.graph = n2vGraph(graph, walking_pool_size, walk_length, p, q)
         self.num_walks = num_walks
         self.walk_length = walk_length
         self.embedding_dim = embedding_dim

@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from tqdm import tqdm
 from graphx import Graph
 from sampling import alias_init, alias_sampling
 
@@ -16,6 +17,9 @@ class n2vGraph(object):
     n2vGraph.node_sampling: dict, the alias parameters of node sampling;
     n2vGraph.edge_sampling: dict, the alias parameters of edge sampling;
     n2vGraph.negative_sampling_params: tuple, the alias parameters of negative sampling;
+    n2vGraph.walking_pool: dict, the walking pool of each node;
+    n2vGraph.walking_pool_size: int, the size of walking pool of each node; non-positive value means no walking pool;
+    n2vGraph.walk_length: int, the walking length of the walking pool;
     n2vGraph.id: dict, the mapping of the node to its ID number.
 
     Reference
@@ -23,26 +27,32 @@ class n2vGraph(object):
     Grover, Aditya, and Jure Leskovec. "node2vec: Scalable feature learning for networks." 
       Proceedings of the 22nd ACM SIGKDD international conference on Knowledge discovery and data mining. 2016.
     '''
-    def __init__(self, graph: Graph, p: float, q: float):
+    def __init__(self, graph: Graph, walking_pool_size: int, walk_length: int, p: float, q: float):
         '''
         Initialize the node2vec graph, along with alias sampling initializations.
 
         Parameters
         ----------
         graph: graphx.Graph object, the graph;
+        walking_pool_size: int, the size of walking pool of each node; non-positive value means no walking pool;
+        walk_length: int, the walking length of the walking pool;
         p, q: float, the parameters of probability in node2vec walking process.
         '''
         super(n2vGraph, self).__init__()
         self.graph = graph
         self.nodes = graph.iter_nodes()
+        self.walking_pool_size = walking_pool_size
+        self.walk_length = walk_length
         self.p = p
         self.q = q
         self.id = {}
         self.initialization()
+        if self.walking_pool_size > 0:
+            self.initialization_walking_pool()
     
     def initialization(self):
         '''
-        The initialization process of alias sampling, and preprocess the id mapping.
+        The initialization process of alias sampling and preprocess the id mapping, along with walking pool initialization.
         '''
         self.node_sampling = {}
         for x in self.nodes:
@@ -73,6 +83,15 @@ class n2vGraph(object):
         for x in self.nodes:
             self.id[x] = idx
             idx += 1
+    
+    def initialization_walking_pool(self):
+        '''
+        Initialize the walking pool.
+        '''
+        self.walking_pool = {}
+        for node in tqdm(self.nodes):
+            self.walking_pool[node] = self.walk(self.walking_pool_size, self.walk_length, nodes = [node], create_pool = True)
+
                         
     def random_walk(self, length: int, node: int):
         '''
@@ -111,7 +130,7 @@ class n2vGraph(object):
             id_walk.append(self.id[item])
         return id_walk
 
-    def walk(self, num_walks: int, length: int, nodes: list = []):
+    def walk(self, num_walks: int, length: int, nodes: list = [], create_pool: bool = False):
         '''
         Perform random walks of certain length starting from each node for certain times.
 
@@ -121,6 +140,7 @@ class n2vGraph(object):
         length: int, the length of the random walk;
         nodes: list, optional, default: [], the list of starting nodes. 
                If nodes is [], then we use all nodes in the graph to walk.
+        create_pool: bool, optional, default: False, whether we are creating the walking pool.
         
         Returns
         -------
@@ -129,9 +149,14 @@ class n2vGraph(object):
         walks = []
         if nodes == []:
             nodes = self.nodes
-        for _ in range(num_walks):
-            for node in random.sample(nodes, len(nodes)):
-                walks.append(self.random_walk(length, node))
+        if not create_pool and num_walks <= self.walking_pool_size and length == self.walk_length:
+            for _ in range(num_walks):
+                for node in random.sample(nodes, len(nodes)):
+                    walks.append(self.walking_pool[node][np.random.randint(0, self.walking_pool_size)])
+        else:
+            for _ in range(num_walks):
+                for node in random.sample(nodes, len(nodes)):
+                    walks.append(self.random_walk(length, node))
         return walks
     
     def negative_sampling(self, k: int):

@@ -4,6 +4,7 @@ This is a repository for labs of EE359: Data Mining Techniques in Shanghai Jiao 
 
 - Lab 1: clustering
 - Lab 2: community detection
+- Lab 3: link prediction
 
 ## Lab 1: Clustering
 
