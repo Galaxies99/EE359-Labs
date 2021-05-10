@@ -1,4 +1,4 @@
-# Lab 2. Link Prediction
+# Lab 3. Link Prediction
 
 **Author**: Hongjie Fang (方泓杰)
 

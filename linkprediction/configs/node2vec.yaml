@@ -1,0 +1,6 @@
+walk_num: 40
+walk_length: 20
+embedding_dim: 256
+p: 1
+q: 1
+k: 10
