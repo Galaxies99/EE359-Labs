@@ -6,6 +6,7 @@
 */checkpoint
 */__pycache__/
 */*/__pycache__/
+linkprediction/submission.csv
 .history/
 .vscode/
 

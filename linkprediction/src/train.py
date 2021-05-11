@@ -21,20 +21,21 @@ with open(CFG_FILE, 'r') as cfg_file:
 GRAPH_FILE = cfg_dict.get('graph_file', 'data/course3_edge.csv')
 TEST_FILE = cfg_dict.get('test_file', 'data/course3_test.csv')
 CHECKPOINT_DIR = cfg_dict.get('checkpoint_dir', 'checkpoint')
+NODE_NUMBER = cfg_dict.get('node_number', 0)
 NUM_WALKS = cfg_dict.get('num_walks', 40)
 WALKING_POOL_SIZE = cfg_dict.get('walking_pool_size', 50)
 WALK_LENGTH = cfg_dict.get('walk_length', 20)
 EMBEDDING_DIM = cfg_dict.get('embedding_dim', 256)
-EPOCH_NUM = cfg_dict.get('epoch_num', 30)
+EPOCH_NUM = cfg_dict.get('epoch_num', 300)
 BATCH_SIZE = cfg_dict.get('batch_size', 128)
 LEARNING_RATE = cfg_dict.get('learning_rate', 0.01)
-MILESTONES = cfg_dict.get('milestones', [5, 10, 15, 20, 25])
+MILESTONES = cfg_dict.get('milestones', [100])
 GAMMA = cfg_dict.get('gamma', 0.1)
 P = cfg_dict.get('p', 0.5)
 Q = cfg_dict.get('q', 2)
 K = cfg_dict.get('k', 30)
 
-graph, val_edges, val_labels = load_graph(GRAPH_FILE)
+graph, val_edges, val_labels = load_graph(GRAPH_FILE, NODE_NUMBER)
 model = node2vec(graph, NUM_WALKS, WALKING_POOL_SIZE, WALK_LENGTH, EMBEDDING_DIM, P, Q, K)
 dataset = n2vDataset(graph)
 val_dataset = n2vValDataset(val_edges, val_labels)
@@ -103,6 +104,7 @@ def train(model, optimizer, lr_scheduler, epochs, start_epoch, display_batch = F
         lr_scheduler.step()
         save_dict = {
             'epoch': epoch + 1,
+            'graph': graph.state_dict(),
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'scheduler': lr_scheduler.state_dict()

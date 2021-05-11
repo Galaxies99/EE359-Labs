@@ -47,10 +47,29 @@ class n2vValDataset(Dataset):
         return self.edges[index][0], self.edges[index][1], self.labels[index]
 
 
-def load_graph(file_path: str):
+class n2vTestDataset(Dataset):
+    '''
+    The testing dataset of node2vec framework.
+    
+    Members
+    -------
+    self.edges: the testing edges.
+    '''
+    def __init__(self, edges: list):
+        super(n2vTestDataset, self).__init__()
+        self.edges = edges
+    
+    def __len__(self):
+        return len(self.edges)
+
+    def __getitem__(self, index):
+        return self.edges[index][0], self.edges[index][1], self.edges[index][2]
+
+
+def load_graph(file_path: str, node_number: int = 0):
     df = pd.read_csv(file_path)
     data = np.array(df)
-    graph = Graph()
+    graph = Graph(node_number)
     graph.add_edges_from_list(data)
 
     edge_num = data.shape[0]
@@ -59,11 +78,9 @@ def load_graph(file_path: str):
     np.random.shuffle(data)
     training_edges = data[:training_edge_num, :]
     testing_edges = data[training_edge_num:, :]
-    
+
     nodes = graph.iter_nodes()
-    subgraph = Graph()
-    for node in nodes:
-        subgraph.add_node(node)
+    subgraph = Graph(node_number)
     subgraph.add_edges_from_list(training_edges)
 
     testing_edges = testing_edges.tolist()
@@ -82,3 +99,9 @@ def load_graph(file_path: str):
                 continue_sample = False
     
     return subgraph, testing_edges, testing_labels
+
+
+def load_testing_set(file_path: str):
+    df = pd.read_csv(file_path)
+    data = np.array(df).tolist()
+    return data

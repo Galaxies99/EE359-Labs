@@ -10,13 +10,20 @@ class Graph(object):
     Graph._graph: dict of dict, the graph;
     Graph._degree: dict, the degree of each node in the graph.
     '''
-    def __init__(self):
+    def __init__(self, node_num: int = 0):
         '''
         Initialize the graph as an empty graph.
+
+        Parameters
+        ----------
+        node_num: int, the number of node. 
         '''
         super(Graph, self).__init__()
         self._graph = {}
         self._degree = {}
+        assert node_num >= 0
+        for i in range(node_num):
+            self.add_node(i)
     
     def add_node(self, node: int):
         '''
@@ -171,3 +178,24 @@ class Graph(object):
         A copied object.
         '''
         return copy.deepcopy(self)
+    
+    def state_dict(self):
+        '''
+        Get the state dict of the graph.
+
+        Returns
+        -------
+        A state dict.
+        '''
+        return {'graph': self._graph, 'degree': self._degree}
+
+    def load_state_dict(self, state_dict):
+        '''
+        Load the state dict of the graph.
+
+        Parameters
+        ----------
+        state_dict: dict, the state dict.
+        '''
+        self._graph = state_dict.get('graph', {})
+        self._degree = state_dict.get('degree', {})

@@ -183,3 +183,4 @@ class n2vGraph(object):
         The node list of the graph.
         '''
         return self.nodes
+    

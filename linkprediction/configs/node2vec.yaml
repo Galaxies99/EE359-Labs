@@ -1,6 +1,8 @@
 graph_file: 'data/course3_edge.csv'
 test_file: 'data/course3_test.csv'
+test_result_file: 'submission.csv'
 checkpoint_dir: 'checkpoint'
+node_number: 16863
 walking_pool_size: 40
 num_walks: 40
 walk_length: 20
