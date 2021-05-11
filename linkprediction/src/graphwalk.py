@@ -91,7 +91,6 @@ class n2vGraph(object):
         self.walking_pool = {}
         for node in tqdm(self.nodes):
             self.walking_pool[node] = self.walk(self.walking_pool_size, self.walk_length, nodes = [node], create_pool = True)
-
                         
     def random_walk(self, length: int, node: int):
         '''
@@ -150,9 +149,8 @@ class n2vGraph(object):
         if nodes == []:
             nodes = self.nodes
         if not create_pool and num_walks <= self.walking_pool_size and length == self.walk_length:
-            for _ in range(num_walks):
-                for node in random.sample(nodes, len(nodes)):
-                    walks.append(self.walking_pool[node][np.random.randint(0, self.walking_pool_size)])
+            for node in random.sample(nodes, len(nodes)):
+                walks = walks + random.sample(self.walking_pool[node], num_walks)
         else:
             for _ in range(num_walks):
                 for node in random.sample(nodes, len(nodes)):

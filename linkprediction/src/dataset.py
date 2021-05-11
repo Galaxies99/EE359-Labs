@@ -54,7 +54,7 @@ def load_graph(file_path: str):
     graph.add_edges_from_list(data)
 
     edge_num = data.shape[0]
-    training_edge_num = int(edge_num * 0.8)
+    training_edge_num = int(edge_num * 0.9)
     testing_edge_num = edge_num - training_edge_num
     np.random.shuffle(data)
     training_edges = data[:training_edge_num, :]

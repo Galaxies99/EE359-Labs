@@ -32,7 +32,7 @@ MILESTONES = cfg_dict.get('milestones', [5, 10, 15, 20, 25])
 GAMMA = cfg_dict.get('gamma', 0.1)
 P = cfg_dict.get('p', 0.5)
 Q = cfg_dict.get('q', 2)
-K = cfg_dict.get('k', 20)
+K = cfg_dict.get('k', 30)
 
 graph, val_edges, val_labels = load_graph(GRAPH_FILE)
 model = node2vec(graph, NUM_WALKS, WALKING_POOL_SIZE, WALK_LENGTH, EMBEDDING_DIM, P, Q, K)
@@ -58,8 +58,10 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
 
-def train_one_epoch(model, optimizer, lr_scheduler, epoch_num, display = True):
+def train_one_epoch(model, optimizer, lr_scheduler, epoch_num, display_batch = False):
     print('*** Epoch: {}, Current learning rate: {}'.format(epoch_num + 1, lr_scheduler.get_last_lr()[0]))
+    loss_cnt = 0
+    batch_cnt = 0
     model.train()
     for idx, nodes in enumerate(dataloader):
         optimizer.zero_grad()
@@ -67,11 +69,13 @@ def train_one_epoch(model, optimizer, lr_scheduler, epoch_num, display = True):
         loss = model.loss(nodes, sample, device)
         loss.backward()
         optimizer.step()
-        if display:
+        loss_cnt = loss_cnt + loss.item()
+        batch_cnt = batch_cnt + 1
+        if display_batch:
             print('Batch: {}, Loss: {}'.format(idx + 1, loss.item()))
+    print('Mean loss:', loss_cnt / batch_cnt)
 
-
-def eval_one_epoch(model, epoch_num, display = True):
+def eval_one_epoch(model, epoch_num):
     print('*** Epoch {} Testing'.format(epoch_num + 1))
     model.eval()
     pred_list, label_list = [], []
@@ -86,13 +90,16 @@ def eval_one_epoch(model, epoch_num, display = True):
         label_list.append(label)
     preds = torch.cat(pred_list, dim = 0)
     labels = torch.cat(label_list, dim = 0)
-    print('AUC: ', calc_auc(preds.cpu().numpy(), labels.cpu().numpy()))
+    auc = calc_auc(preds.cpu().numpy(), labels.cpu().numpy())
+    print('AUC: ', auc)
+    return auc
 
 
-def train(model, optimizer, lr_scheduler, epochs, start_epoch, display = True):
+def train(model, optimizer, lr_scheduler, epochs, start_epoch, display_batch = False):
+    best_auc = 0
     for epoch in range(start_epoch, epochs):
-        train_one_epoch(model, optimizer, lr_scheduler, epoch, display = display)
-        eval_one_epoch(model, epoch, display = display)
+        train_one_epoch(model, optimizer, lr_scheduler, epoch, display_batch = display_batch)
+        auc = eval_one_epoch(model, epoch)
         lr_scheduler.step()
         save_dict = {
             'epoch': epoch + 1,
@@ -100,8 +107,11 @@ def train(model, optimizer, lr_scheduler, epochs, start_epoch, display = True):
             'optimizer_state_dict': optimizer.state_dict(),
             'scheduler': lr_scheduler.state_dict()
         }
-        torch.save(save_dict, checkpoint_file)
+        if auc > best_auc:
+            torch.save(save_dict, checkpoint_file)
+            best_auc = auc
+    print('*** End of training, best AUC: {}'.format(best_auc))
 
 
 if __name__ == '__main__':
-    train(model, optimizer, lr_scheduler, EPOCH_NUM, start_epoch, display = True)
+    train(model, optimizer, lr_scheduler, EPOCH_NUM, start_epoch, display_batch = False)
