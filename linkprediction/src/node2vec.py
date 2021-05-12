@@ -109,5 +109,5 @@ class node2vec(nn.Module):
             target[i] = self.graph.id[tgt.item()]
         emb_source = self.emb(source)
         emb_target = self.emb(target)
-        pred = torch.sigmoid((emb_source * emb_target).sum(dim = -1))
+        pred = torch.cosine_similarity(emb_target, emb_source)
         return pred
