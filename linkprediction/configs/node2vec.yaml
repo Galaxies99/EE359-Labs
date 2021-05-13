@@ -5,12 +5,12 @@ checkpoint_dir: 'checkpoint'
 node_number: 16863
 walking_pool_size: 40
 num_walks: 40
-walk_length: 20
+walk_length: 25
 embedding_dim: 256
 epoch_num: 300
 batch_size: 128
 learning_rate: 0.01
-milestones: [100]
+milestones: [120, 180, 240]
 gamma: 0.1
 p: 0.5
 q: 2
