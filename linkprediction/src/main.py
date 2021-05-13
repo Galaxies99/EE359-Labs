@@ -37,12 +37,14 @@ dataset = n2vTestDataset(test_edges)
 # For testing/inference, just use batch size of 1 for convenience.
 dataloader = DataLoader(dataset, batch_size = 1, shuffle = True)
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 start_epoch = 0
 if os.path.exists(CHECKPOINT_DIR) == False:
     raise AttributeError('No checkpoint file!')
 checkpoint_file = os.path.join(CHECKPOINT_DIR, 'checkpoint.tar')
-if os.path.isfile(checkpoint_file):
-    checkpoint = torch.load(checkpoint_file)
+if os.path.isfile(checkpoint_file):    
+    checkpoint = model = torch.load(checkpoint_file, map_location=device)
     graph = Graph(NODE_NUMBER)
     graph.load_state_dict(checkpoint['graph'])
     # For testing, no need to create pool.
@@ -53,8 +55,6 @@ if os.path.isfile(checkpoint_file):
 else:
     raise AttributeError('No checkpoint file!')
 
-
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
 

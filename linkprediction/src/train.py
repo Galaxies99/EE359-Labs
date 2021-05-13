@@ -42,18 +42,12 @@ val_dataloader = DataLoader(val_dataset, batch_size = BATCH_SIZE, shuffle = True
 optimizer = AdamW(model.parameters(), lr = LEARNING_RATE)
 lr_scheduler = MultiStepLR(optimizer, milestones = MILESTONES, gamma = GAMMA)
 
-start_epoch = 0
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 if os.path.exists(CHECKPOINT_DIR) == False:
     os.mkdir(CHECKPOINT_DIR)
 checkpoint_file = os.path.join(CHECKPOINT_DIR, 'checkpoint.tar')
-if os.path.isfile(checkpoint_file):
-    checkpoint = torch.load(checkpoint_file)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    lr_scheduler.load_state_dict(checkpoint['scheduler'])
-    start_epoch = checkpoint['epoch']
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
 
@@ -114,4 +108,4 @@ def train(model, optimizer, lr_scheduler, epochs, start_epoch, display_batch = F
 
 
 if __name__ == '__main__':
-    train(model, optimizer, lr_scheduler, EPOCH_NUM, start_epoch, display_batch = False)
+    train(model, optimizer, lr_scheduler, EPOCH_NUM, 0, display_batch = False)
