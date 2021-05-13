@@ -3,4 +3,5 @@ pandas
 torch
 tqdn
 yaml
-
+scipy
+scikit-learn

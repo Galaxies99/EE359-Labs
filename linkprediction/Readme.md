@@ -14,7 +14,9 @@ This code has been tested under macOS Big Sur 11.2.3 using Python 3.8.8. Use the
 pip3 install -r requirements.txt
 ```
 
-Put the data in `data/` folder with name `course3_edge.csv` and `course3_test.csv`. 
+**NOTE**. `sklearn` package is only used during training, since we use the metrics `AUC` in this process to measure the performance of the model.
+
+Put the data in `data/` folder with name `course3_edge.csv` and `course3_test.csv`.
 
 ## Training (optional)
 

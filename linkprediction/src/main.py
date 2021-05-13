@@ -1,18 +1,11 @@
 import os
 import yaml
 import torch
-import torch.nn as nn
 import argparse
-import numpy as np
-import pandas as pd
-from tqdm import tqdm
-from torch.optim import AdamW
-from torch.optim.lr_scheduler import MultiStepLR
 from graphx import Graph
 from node2vec import node2vec
 from dataset import n2vTestDataset, load_testing_set
 from torch.utils.data import DataLoader
-from criterion import calc_auc
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--cfg', default = os.path.join('configs', 'node2vec.yaml'), help = 'Config File', type = str)

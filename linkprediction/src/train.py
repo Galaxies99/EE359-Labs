@@ -1,9 +1,7 @@
 import os
 import yaml
 import torch
-import torch.nn as nn
 import argparse
-from tqdm import tqdm
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import MultiStepLR
 from node2vec import node2vec
