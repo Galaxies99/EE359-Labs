@@ -20,7 +20,7 @@ Put the data in `data/` folder with name `course3_edge.csv` and `course3_test.cs
 
 ## Training (optional)
 
-Use the following commands to train the node2vec model. Make sure `checkpoint/` folder is empty when you start a new training process. A training process takes about 20~30 minutes using an NVIDIA RTX2080 GPU.
+Use the following commands to train the node2vec model. Make sure `checkpoint/` folder is empty when you start a new training process. A training process takes about 10 minutes using an NVIDIA RTX2080 GPU.
 
 ```bash
 python src/train.py --cfg [Config File]
@@ -28,12 +28,14 @@ python src/train.py --cfg [Config File]
 
 where the optional  `--cfg [Config File]` specifies the configuration file, the default configuration file is `configs/default.yaml`.
 
+The generated embeddings will be saved in the checkpoint file specified in the configuration file, by default the embedding file is the `checkpoint/checkpoint.tar` file. **You can skip the training process, since we have already trained the model and save it in the `checkpoint/checkpoint.tar` file.**
+
 ## Testing / Inference
 
-Then execute the main program (inference program) using the following scripts. Make sure `checkpoint/` folder has a checkpoint file named `checkpoint.tar`. A testing process takes a few seconds (usually 3-4 seconds) using an ordinary CPU.
+Then execute the main program (inference program) using the following scripts. Make sure `checkpoint/` folder has an embedding file named `checkpoint.tar`. A testing process takes a few seconds (usually 3-4 seconds) using an ordinary CPU.
 
 ```bash
-python3 src/test.py --cfg [Config File]
+python src/main.py --cfg [Config File]
 ```
 
 where the optional  `--cfg [Config File]` specifies the configuration file, the default configuration file is `configs/default.yaml`.

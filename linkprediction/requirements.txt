@@ -1,7 +1,7 @@
 numpy
 pandas
 torch
-tqdn
+tqdm
 yaml
 scipy
 scikit-learn
